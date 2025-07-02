@@ -81,12 +81,12 @@ export default defineConfig({
     host: true,
     proxy: {
       '/api': {
-        target: 'http://bw1.123456.top/',
+        target: 'https://m.9zhou.top/', // http://bw1.123456.top
         changeOrigin: true,
         rewrite: path => path.replace(/^\/api/, '/api'),
       },
       '/storage': {
-        target: 'http://bw1.123456.top/',
+        target: 'https://m.9zhou.top/',
         changeOrigin: true,
         rewrite: path => path.replace(/^\/storage/, '/storage/'),
       },
