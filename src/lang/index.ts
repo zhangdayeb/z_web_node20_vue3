@@ -44,7 +44,7 @@ const messages = {
 
 export function getLanguage() {
   const lang = localStorage.getItem('lang')
-  return lang || 'ko-KR'
+  return lang || 'zh-CN'
 }
 
 export function getServeLanguage() {
