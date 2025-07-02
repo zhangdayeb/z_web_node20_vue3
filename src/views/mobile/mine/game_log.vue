@@ -1,0 +1,336 @@
+<template>
+  <div class="m-money-log">
+    <van-nav-bar
+      left-arrow
+      :title="$t('mine.gameLog')"
+      @click-left="onClickLeft"
+      class="m-nav"
+    />
+    <!-- 统计 -->
+    <div class="m-static">
+      <div class="m-col m-static-item">
+        <span>{{ statistic.sum_bet_amount }}</span>
+        <h5>{{ $t('mine.totalBetAmount') }}</h5>
+      </div>
+      <div class="m-col m-static-item">
+        <span class="m-c-red">{{ statistic.sum_net_amount }}</span>
+        <h5>{{ $t('mine.totalWinLoss') }}</h5>
+      </div>
+    </div>
+    <!-- search -->
+    <div class="m-search">
+      <van-dropdown-menu>
+        <van-dropdown-item
+          v-model="search.created_at"
+          :options="dateRangeList"
+          title-class="m-drop-title"
+          @change="dropItemChange"
+        />
+        <van-dropdown-item
+          v-model="search.operate_type"
+          :options="interfaceChange"
+          title-class="m-drop-title"
+          :title="$t('mine.apiType')"
+          @change="dropItemChange"
+        />
+        <van-dropdown-item
+          v-model="search.money_type"
+          :options="gameRangeList"
+          title-class="m-drop-title"
+          :title="$t('mine.gameType')"
+          @change="dropItemChange"
+        />
+      </van-dropdown-menu>
+      <!-- list -->
+      <van-pull-refresh
+        v-model="refreshing"
+        @refresh="onRefresh"
+        class="m-refresh"
+      >
+        <van-list
+          :immediate-check="false"
+          v-model:loading="loading"
+          :finished="finished"
+          :finished-text="$t('noMore')"
+          @load="onLoad"
+        >
+          <van-cell
+            v-for="item in list"
+            :key="item.id"
+            is-link
+            :title="item.api_name_text"
+            :label="item.betTime"
+            :value="item.betAmount"
+            value-class="m-c-red"
+            @click="detailHandler(item)"
+          />
+        </van-list>
+      </van-pull-refresh>
+    </div>
+    <!-- 底部弹出 -->
+    <van-popup
+      v-model:show="showBottom"
+      position="bottom"
+      closeable
+      :style="{ height: '70%' }"
+    >
+      <van-cell-group :title="$t('moneyLog.detail')">
+        <van-cell
+          :title="$t('moneyLog.tradeMoney')"
+          :value="selectItem?.betAmount"
+        />
+        <van-cell
+          :title="$t('moneyLog.walletType')"
+          :value="$t('mine.money')"
+        />
+        <van-cell :title="$t('moneyLog.transferType')" :value="'USD'" />
+        <van-cell
+          :title="$t('moneyLog.status')"
+          :value="
+            selectItem?.status === 'COMPLETE'
+              ? $t('game_log.complete')
+              : selectItem?.status.includes(['N', 'CANCEL'])
+                ? $t('game_log.cancel')
+                : $t('game_log.not_cpmpelete')
+          "
+        />
+        <van-cell
+          :title="$t('moneyLog.tradeDate')"
+          :value="selectItem?.betTime"
+        />
+      </van-cell-group>
+    </van-popup>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { useRouter } from 'vue-router'
+import { onMounted, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
+// import { useAppStore } from '@/stores/app'
+import { getDateRange, invokeApi, getYestodayRange } from '@/utils/tools'
+import type {
+  ApiGameStatistic,
+  ApiGameType,
+  ApiMoneyLogItem,
+  ApiPageData,
+} from 'typings/api'
+import type { DropdownItemOption } from 'vant'
+defineOptions({ name: 'GameRecord' })
+
+const { t } = useI18n()
+// const store = useAppStore()
+const router = useRouter()
+const search = ref({
+  created_at: 1,
+  money_type: '',
+  operate_type: '',
+})
+const page = ref(0)
+const total = ref(0)
+
+const dateRangeList = ref([
+  { text: t('mine.today'), value: 1 },
+  { text: t('mine.yestoday'), value: 2 },
+  { text: t('mine.week'), value: 3 },
+  { text: t('mine.month'), value: 4 },
+])
+const interfaceChange = ref<{ text: string; value: string | number }[]>([])
+const gameRangeList = ref<DropdownItemOption[]>([])
+const statistic = ref<ApiGameStatistic>({
+  sum_bet_amount: 0,
+  sum_valid_bet_amount: 0,
+  sum_net_amount: 0,
+})
+const list = ref<ApiMoneyLogItem[]>([])
+
+const loading = ref(false)
+const refreshing = ref(false)
+const finished = ref(false)
+const showBottom = ref(false)
+const selectItem = ref<ApiMoneyLogItem>()
+
+function detailHandler(it: ApiMoneyLogItem) {
+  showBottom.value = true
+  // console.log('it=', it)
+  selectItem.value = it
+}
+//下拉刷新
+const onRefresh = async () => {
+  finished.value = false
+  loading.value = true
+  page.value = 0
+  await getMoneyLogs(installParams())
+}
+
+//list加载
+const onLoad = async () => {
+  await getMoneyLogs(installParams())
+}
+//search条件变更
+async function dropItemChange(n: string | number) {
+  console.log('n=', n)
+  list.value = []
+  await onRefresh()
+}
+//返回
+function onClickLeft() {
+  router.back()
+}
+
+//组装api请求参数
+function installParams() {
+  let tmp: string[] = []
+  switch (Number(search.value.created_at)) {
+    case 1:
+      tmp = getDateRange(0)
+      break
+    case 2:
+      tmp = getYestodayRange()
+      break
+    case 3:
+      tmp = getDateRange(7)
+      break
+    case 4:
+      tmp = getDateRange(30)
+      break
+  }
+  return {
+    page: page.value + 1,
+    operate_type: search.value.operate_type,
+    money_type: search.value.money_type,
+    created_at: tmp,
+  }
+}
+
+//游戏类别
+async function getGameTypes() {
+  const resp = await invokeApi('gameTypes')
+  if (!resp) {
+    return
+  }
+  if (resp.data) {
+    const arr = resp.data as Array<ApiGameType>
+    gameRangeList.value = [{ text: t('mine.all'), value: '' }]
+    arr.forEach(it => {
+      gameRangeList.value.push({ text: it.value, value: it.key })
+    })
+  }
+}
+//金流记录
+async function getMoneyLogs(d: object) {
+  const resp = await invokeApi('gameLog', d)
+  if (refreshing.value) {
+    list.value = []
+    refreshing.value = false
+  }
+
+  if (!resp) {
+    loading.value = false
+    return
+  }
+
+  if (resp.apis && resp.apis.length > 0 && interfaceChange.value.length === 0) {
+    const tmp: { text: string; value: string | number }[] = [
+      { text: t('mine.all'), value: '' },
+    ]
+    resp.apis.forEach((item: { key: number; value: string }) => {
+      tmp.push({ text: item?.value ?? '', value: item?.key ?? 0 })
+    })
+    if (tmp.length > 0) {
+      interfaceChange.value = tmp
+    }
+  }
+  if (resp.statistic && Object.keys(resp.statistic).length > 0) {
+    const stat = resp.statistic as ApiGameStatistic
+    statistic.value.sum_bet_amount = Number(stat?.sum_bet_amount ?? '0')
+    statistic.value.sum_net_amount = Number(stat?.sum_net_amount ?? '0')
+    statistic.value.sum_valid_bet_amount = Number(
+      stat?.sum_valid_bet_amount ?? '0',
+    )
+  }
+
+  if (resp.data) {
+    const data: ApiPageData<[]> = resp.data as ApiPageData<[]>
+    if ((data.total ?? 0) >= 0) {
+      page.value = data?.current_page ?? 1
+
+      total.value = data?.total ?? 0
+      list.value = list.value.concat(data?.data ?? [])
+
+      if (list.value.length >= total.value) {
+        finished.value = true
+      }
+    }
+  }
+  loading.value = false
+  // console.log('list=', list.value)
+}
+
+onMounted(async () => {
+  await getGameTypes()
+  await getMoneyLogs(installParams())
+})
+</script>
+
+<style lang="less" scoped>
+.m-money-log {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  gap: 10px;
+
+  .m-flex {
+    flex: 1;
+  }
+  .m-align-cen {
+    align-items: center;
+  }
+  .m-col {
+    display: flex;
+    flex-direction: column;
+  }
+  .m-row {
+    display: flex;
+    flex-direction: row;
+  }
+  .m-static {
+    padding: 10px 16px;
+    background-color: #fff;
+    .m-row;
+    justify-content: space-around;
+    align-items: center;
+
+    &-item {
+      .m-flex;
+      .m-align-cen;
+      gap: 5px;
+
+      h5 {
+        font-size: 14px;
+        color: #999;
+        font-weight: 400;
+      }
+      span {
+        font-size: 14px;
+      }
+    }
+  }
+  .m-search {
+    .m-refresh {
+      height: 100%;
+    }
+  }
+}
+</style>
+<style lang="less">
+@import url('@/views/mobile/common.less');
+.m-search {
+  .m-drop-title {
+    font-size: 14px;
+  }
+  .van-cell--clickable {
+    align-items: center;
+  }
+}
+</style>
