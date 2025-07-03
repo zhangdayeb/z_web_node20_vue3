@@ -27,6 +27,13 @@ export function getImgUrl(url: string) {
   if (url.trim().length <= 0) {
     return ''
   }
+  return  url
+}
+
+export function getImgUrl_old(url: string) {
+  if (url.trim().length <= 0) {
+    return ''
+  }
   return `${domain}` + url
 }
 
