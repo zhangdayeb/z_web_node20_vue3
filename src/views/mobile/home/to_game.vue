@@ -168,7 +168,6 @@ async function enterGame() {
   await gameLoginAction()
 }
 async function gameLoginAction() {
-  //gameCode=0&api_code=AG&isMobile=1
   const resp = await invokeApi('gameLogin', {
     gameCode: route.params.game,
     api_code: route.params.code,
@@ -177,7 +176,9 @@ async function gameLoginAction() {
   if (resp && resp.code && resp.code != 200) {
     showDialog({ message: resp.message })
   } else {
-    gameUrl.value = resp?.data?.toString() ?? ''
+    gameUrl.value = resp?.game_url?.toString() ?? ''
+    console.log("=======================game_url======================")
+    console.log(gameUrl.value)
     if (gameUrl.value != '') {
       const h = isMobile()
       if (h === false && window.parent) {
