@@ -77,7 +77,7 @@ import { onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAppStore } from '@/stores/app'
 import { showToast } from 'vant'
-import { getImgUrl, invokeApi, isMobile2 } from '@/utils/tools'
+import { getImgUrl, invokeApi, isMobile } from '@/utils/tools'
 import loginPop from '@/components/loginPop.vue'
 import api from '@/api'
 import { useI18n } from 'vue-i18n'
@@ -182,7 +182,7 @@ function enterGame(game: gameInfo) {
     params: {
       game: game.game_code,
       code: game.api_name,
-      mobile: isMobile2() ? 1 : 0,
+      mobile: isMobile() ? 1 : 0,
     },
   })
 }
@@ -234,7 +234,7 @@ async function gameList() {
       gameType: currType.value,
       api_code: currCode.value,
       tag: currTag.value,
-      isMobile: isMobile2() ? 1 : 0,
+      isMobile: isMobile() ? 1 : 0,
       keyword: '',
     })
     console.log('game list resp:', resp)

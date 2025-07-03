@@ -68,7 +68,7 @@
 
 <script setup lang="ts">
 import { useAppStore } from '@/stores/app'
-import { invokeApi, isMobile2 } from '@/utils/tools'
+import { invokeApi, isMobile } from '@/utils/tools'
 import type { ApiMoneyRespData, ApiWallet } from 'typings'
 import { showDialog, showToast } from 'vant'
 import { onMounted, ref } from 'vue'
@@ -179,7 +179,7 @@ async function gameLoginAction() {
   } else {
     gameUrl.value = resp?.data?.toString() ?? ''
     if (gameUrl.value != '') {
-      const h = isMobile2()
+      const h = isMobile()
       if (h === false && window.parent) {
         // 如果是移动端，使用a标签跳转
         window.parent.location.href = gameUrl.value

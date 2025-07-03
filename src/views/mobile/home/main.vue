@@ -144,7 +144,7 @@ defineOptions({ name: 'HomeMain' })
 import { onMounted, ref } from 'vue'
 import LanguageVue from './components/language.vue'
 import api from '@/api'
-import { getImgUrl, invokeApi, isMobile2 } from '@/utils/tools'
+import { getImgUrl, invokeApi, isMobile } from '@/utils/tools'
 import { showNotify, showToast } from 'vant'
 import { useAppStore } from '@/stores/app'
 import { useRouter } from 'vue-router'
@@ -242,7 +242,7 @@ function playGameHandler(n: child) {
     params: {
       game: pa?.gameCode ?? 0,
       code: n.api_name,
-      mobile: isMobile2() ? 1 : 0,
+      mobile: isMobile() ? 1 : 0,
     },
   })
 }
