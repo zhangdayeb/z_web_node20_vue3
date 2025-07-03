@@ -25,7 +25,7 @@
             <span class="m-level-txt">{{ store.getUser()?.level }}</span>
           </div>
           <van-button
-            v-if="1 == 2"
+            v-if="false"
             type="danger"
             size="mini"
             class="m-btn"
